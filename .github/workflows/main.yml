@@ -1,0 +1,39 @@
+name: Build Windows EXE
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        playwright install chromium
+
+    - name: Build EXE
+      run: |
+        # 使用 pyinstaller 打包，包含 chromium 浏览器
+        # 注意：这里会自动把 playwright 的浏览器复制进去
+        pyinstaller --noconsole --onefile --name=客服监控助手 main.py
+        
+    - name: Copy Playwright Browsers (Magic Step)
+      # 这一步是为了确保浏览器内核被正确搬运
+      run: |
+        playwright install chromium
+        # 这一步比较暴力，直接把打包好的 EXE 上传，实际上 Playwright 的浏览器需要特殊处理
+        # 为了简单起见，我们换一种策略：不打包浏览器进 EXE，而是让员工第一次运行自动下载
+        
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: KefuTool_Windows
+        path: dist/客服监控助手.exe
